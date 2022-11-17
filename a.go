@@ -1,32 +1,31 @@
 package main
 
-import "fmt"
+import (
+	"encoding"
+)
 
 type (
 	T interface {
 		string | []byte
 	}
-	IN[t T] interface {
-		fmt.Stringer
-		Bytes() []byte
+	Interface[t T] interface {
+		encoding.BinaryMarshaler
+		encoding.BinaryUnmarshaler
 	}
-	obj[t T] struct {
-		data t
-	}
+	object[t T] struct{ safeValue any }
 )
 
-func (o *obj[t]) Bytes() []byte {
-	return o.data.([]byte)
+func New[t T](safeValue t) Interface[t] { return &object[t]{safeValue: safeValue} }
+func (o *object[t]) MarshalBinary() (data []byte, err error) {
+	switch o.safeValue.(type) {
+	case string:
+		return []byte(o.safeValue.(string)), nil
+	default:
+		return nil, err
+	}
 }
 
-func (o *obj[t]) String() string {
-	return o.data.(string)
-}
-
-func newObj[t T](data t) *obj[t] {
-	return &obj[t]{data: data}
-}
-
-func New[t T](data t) IN[t] {
-	return newObj(data)
+func (o *object[t]) UnmarshalBinary(data []byte) error {
+	//TODO implement me
+	panic("implement me")
 }
